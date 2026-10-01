@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light only;
+    --font-head: 'Poppins', 'Nunito', sans-serif;
+    --font-body: 'Nunito', -apple-system, sans-serif;
+    --font-num: 'Nunito', sans-serif;
+    --bg: #f7f8fb;
+    --panel: #ffffff;
+    --ink: #23283b;
+    --ink-soft: #7c8494;
+    --line-thin: #e3e6ee;
+    --line-thick: #23283b;
+    --accent: #3b5bdb;
+    --accent-soft: #eef1fd;
+    --numpad-bg: #edeffb;
+    --given: #23283b;
+    --user-num: #3b5bdb;
+    --error: #e0523f;
+    --highlight-row: #eef4fc;
+    --highlight-same: #dde8fb;
+    --highlight-select: #c7d7f8;
+    --success: #2f9e5b;
+    --primary-btn: #5b6bcf;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 32px;
+    min-height: 100vh;
+  }
+  @media (min-width: 860px) {
+    .app { max-width: 900px; padding: 24px 24px 40px; }
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line-thin);
+  }
+
+  .brand {
+    font-family: var(--font-head);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark { color: var(--ink-soft); font-size: 18px; }
+  .brand span { color: var(--accent); }
+
+  .top-nav {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .top-nav::-webkit-scrollbar { display: none; }
+
+  h1 { display: none; }
+
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    background: #eef0f3;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .rules-title {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 700;
+    margin: 4px 0 18px;
+  }
+
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  @media (min-width: 460px) {
+    .rules-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .rule-card {
+    background: var(--panel);
+    border: 1px solid var(--line-thin);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rule-thumb {
+    background: var(--accent-soft);
+    padding: 22px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rule-thumb svg { width: 100%; max-width: 170px; height: auto; }
+
+  .rule-body { padding: 14px 16px 16px; }
+
+  .rule-body h3 {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+
+  .rule-excerpt, .rule-full {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+
+  .rule-full { display: none; }
+  .rule-card.expanded .rule-full { display: block; }
+  .rule-card.expanded .rule-excerpt { display: none; }
+
+  .rule-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .difficulty-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 18px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .difficulty-row::-webkit-scrollbar { display: none; }
+
+  .diff-label {
+    font-size: 14px;
+    color: var(--ink-soft);
+    flex: 0 0 auto;
+  }
+
+  .diff-btn {
+    flex: 0 0 auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .diff-btn.active {
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  .game-columns {
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 860px) {
+    .game-columns { flex-direction: row; gap: 40px; align-items: flex-start; }
+    .board-col { flex: 1 1 480px; max-width: 520px; }
+    .panel-col { flex: 1 1 320px; max-width: 360px; padding-top: 4px; }
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  .meta-item { text-align: left; }
+  .meta-item.align-right { text-align: right; }
+  .meta-label { color: var(--ink-soft); font-size: 12px; }
+  .meta-value { font-size: 17px; font-weight: 800; margin-top: 3px; color: var(--ink); }
+  .meta-value.error-count { color: var(--ink); }
+
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .pause-btn {
+    background: var(--numpad-bg);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pause-btn svg { width: 13px; height: 13px; }
+  .pause-btn.is-paused { color: var(--accent); }
+
+  #board.paused {
+    filter: blur(6px);
+    pointer-events: none;
+  }
+
+  .numpad.paused, .controls-row.paused {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .pause-overlay {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--line-thin);
+    border-radius: 8px;
+    padding: 40px 16px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .pause-overlay.show { display: flex; }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--panel);
+    border: 2px solid var(--line-thick);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    touch-action: manipulation;
+  }
+
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    font-family: var(--font-num);
+    font-size: clamp(18px, 4.6vw, 26px);
+    font-weight: 700;
+    color: var(--user-num);
+    background: var(--panel);
+    border-right: 1px solid var(--line-thin);
+    border-bottom: 1px solid var(--line-thin);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cell.given { color: var(--given); font-weight: 700; }
+  .cell.error { color: var(--error); }
+
+  .cell:nth-child(3n) { border-right: 2px solid var(--line-thick); }
+  .cell:nth-child(9n) { border-right: none; }
+  .cell:nth-child(n+73) { border-bottom: none; }
+  .cell.thick-bottom { border-bottom: 2px solid var(--line-thick); }
+
+  .cell.hl-line { background: var(--highlight-row); }
+  .cell.hl-same { background: var(--highlight-same); }
+  .cell.selected { background: var(--highlight-select); }
+
+  .notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .notes span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(7px, 2vw, 9px);
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .controls-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+
+  .ctrl-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+  }
+
+  .ctrl-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--numpad-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .ctrl-icon svg { width: 20px; height: 20px; }
+  .ctrl-btn.active .ctrl-icon { color: var(--accent); }
+
+  .ctrl-flag {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    background: #e2e5ee;
+    padding: 1px 6px;
+    border-radius: 8px;
+    letter-spacing: 0.02em;
+  }
+  .ctrl-btn.active .ctrl-flag {
+    color: #fff;
+    background: var(--accent);
+  }
+
+  .ctrl-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 17px;
+    height: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .num-btn {
+    background: var(--numpad-bg);
+    border: none;
+    border-radius: 12px;
+    padding: 18px 0;
+    font-family: var(--font-num);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .num-btn:active { background: var(--accent-soft); }
+  .num-btn.depleted { color: #c9cee3; pointer-events: none; }
+
+  .new-game-btn {
+    width: 100%;
+    background: var(--primary-btn);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 0;
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .new-game-btn:active { background: #4a58b3; }
+
+  .win-banner {
+    display: none;
+    text-align: center;
+    background: #e9f9ee;
+    color: var(--success);
+    border: 1px solid #bfe9cd;
+    border-radius: 10px;
+    padding: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .win-banner.show { display: block; }
+
+  .info-section {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-thin);
+  }
+
+  .info-title {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  .info-section h3 {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 22px 0 8px;
+    color: var(--ink);
+  }
+
+  .info-section p, .info-section li {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  .info-section strong { color: var(--ink); }
+
+  .info-section ul {
+    margin: 0 0 4px;
+    padding-left: 20px;
+  }
+  .info-section li { margin-bottom: 8px; }
+
+  .solver-intro {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 18px;
+    max-width: 480px;
+  }
+
+  .solver-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    background: var(--panel);
+    border: 2px solid var(--line-thick);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+
+  .solver-cell {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--line-thin);
+    text-align: center;
+    font-family: var(--font-num);
+    font-size: clamp(15px, 3.6vw, 20px);
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--panel);
+    padding: 0;
+    -moz-appearance: textfield;
+  }
+  .solver-cell:nth-child(3n) { border-right: 2px solid var(--line-thick); }
+  .solver-cell:nth-child(9n) { border-right: 1px solid var(--line-thin); }
+  .solver-cell.thick-b { border-bottom: 2px solid var(--line-thick); }
+  .solver-cell:focus { outline: none; background: var(--highlight-select); }
+  .solver-cell.solved-num { color: var(--accent); }
+
+  .solver-actions { display: flex; gap: 10px; max-width: 420px; margin-bottom: 10px; }
+  .solver-btn { flex: 1; }
+
+  .ghost-btn {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px solid var(--line-thin);
+    color: var(--ink-soft);
+    border-radius: 12px;
+    padding: 0 20px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .solver-msg { font-size: 13px; font-weight: 600; min-height: 18px; color: var(--error); }
+  .solver-msg.ok { color: var(--success); }
+
+  .tips-list { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+  .tip-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--panel);
+    border: 1px solid var(--line-thin);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .tip-num {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tip-item div:last-child { font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+  .tip-item strong { color: var(--ink); }
+
+  .settings-list { display: flex; flex-direction: column; gap: 4px; max-width: 520px; margin-bottom: 12px; }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--line-thin);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .setting-sub { font-size: 12px; color: var(--ink-soft); font-weight: 400; margin-top: 2px; }
+  .setting-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
+  .setting-input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid var(--line-thin);
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .settings-note { font-size: 12.5px; color: var(--ink-soft); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand"><span class="brand-mark">☰</span> Su<span>doku</span></div>
+    <nav class="top-nav">
+      <button class="tab-btn active" data-tab="play">Play</button>
+      <button class="tab-btn" data-tab="solver">Solver</button>
+      <button class="tab-btn" data-tab="tips">Tips</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="rules">Rules</button>
+    </nav>
+  </header>
+
+  <div id="playTab">
+  <div class="game-columns">
+    <div class="board-col">
+      <div class="difficulty-row" id="diffRow">
+        <span class="diff-label">Difficulty:</span>
+        <button class="diff-btn" data-diff="easy">Easy</button>
+        <button class="diff-btn" data-diff="medium">Medium</button>
+        <button class="diff-btn" data-diff="hard">Hard</button>
+        <button class="diff-btn" data-diff="expert">Expert</button>
+        <button class="diff-btn" data-diff="master">Master</button>
+        <button class="diff-btn" data-diff="extreme">Extreme</button>
+      </div>
+
+      <div class="win-banner" id="winBanner">Solved! Nicely done.</div>
+
+      <div id="board"></div>
+      <div class="pause-overlay" id="pauseOverlay">Paused — tap to resume</div>
+    </div>
+
+    <div class="panel-col">
+      <div class="meta-row">
+        <div class="meta-item">
+          <div class="meta-label">Mistakes</div>
+          <div class="meta-value error-count" id="mistakeCount">0/3</div>
+        </div>
+        <div class="meta-item align-right">
+          <div class="meta-label">Time</div>
+          <div class="meta-value time-row">
+            <span id="timer">00:00</span>
+            <button id="pauseBtn" class="pause-btn" title="Pause">
+              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <button class="ctrl-btn" id="undoBtn" title="Undo">
+          <span class="ctrl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>
+        </button>
+        <button class="ctrl-btn" id="eraseBtn" title="Erase">
+          <span class="ctrl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9L4 15a1 1 0 0 1 0-1.4l9.6-9.6a1 1 0 0 1 1.4 0l5 5a1 1 0 0 1 0 1.4L13 18"/></svg></span>
+        </button>
+        <button class="ctrl-btn" id="notesBtn" title="Notes">
+          <span class="ctrl-flag" id="notesFlag">OFF</span>
+          <span class="ctrl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4-13 13-5 1 1-5Z"/></svg></span>
+        </button>
+        <button class="ctrl-btn" id="hintBtn" title="Hint">
+          <span class="ctrl-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a6 6 0 0 0-4 10.5c.7.6 1 1.3 1 2.5h6c0-1.2.3-1.9 1-2.5A6 6 0 0 0 12 2Z"/></svg>
+            <span class="ctrl-badge" id="hintCount">3</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="numpad" id="numpad"></div>
+
+      <button class="new-game-btn" id="newGameBtn">New Game</button>
+    </div>
+  </div>
+  </div>
+
+  <div id="solverTab" style="display:none;">
+    <h2 class="rules-title">Sudoku Solver</h2>
+    <p class="solver-intro">Type in the numbers from any puzzle you're stuck on, then hit Solve — it'll fill in the rest using the same logic engine that generates this game's puzzles.</p>
+    <div id="solverBoard" class="solver-board"></div>
+    <div class="solver-actions">
+      <button class="new-game-btn solver-btn" id="solveBtn">Solve</button>
+      <button class="ghost-btn" id="clearSolverBtn">Clear</button>
+    </div>
+    <p class="solver-msg" id="solverMsg"></p>
+  </div>
+
+  <div id="tipsTab" style="display:none;">
+    <h2 class="rules-title">More Sudoku Tips</h2>
+    <div class="tips-list">
+      <div class="tip-item"><span class="tip-num">1</span><div><strong>Work the fullest lines first.</strong> A row, column, or block with 5+ numbers already placed narrows down fast — check what's missing and where it can still legally go.</div></div>
+      <div class="tip-item"><span class="tip-num">2</span><div><strong>Think in bands of three.</strong> If two of three blocks in a band share a digit, the third block's copy of that digit is forced into its one remaining row.</div></div>
+      <div class="tip-item"><span class="tip-num">3</span><div><strong>Use pencil marks early.</strong> On Hard and above, jotting every candidate digit into empty cells (the Notes button) turns guesswork into visible logic.</div></div>
+      <div class="tip-item"><span class="tip-num">4</span><div><strong>Hunt for hidden singles.</strong> Sometimes a digit only fits one open cell in a block even though that cell still shows several candidates — check each missing digit, not just each empty cell.</div></div>
+      <div class="tip-item"><span class="tip-num">5</span><div><strong>Don't guess.</strong> If you're ever tempted to just try a number and see what happens, look again — every step in a proper Sudoku follows from what's already on the board.</div></div>
+      <div class="tip-item"><span class="tip-num">6</span><div><strong>Take breaks on hard puzzles.</strong> Stepping away and coming back with fresh eyes often reveals a pattern you'd stopped seeing.</div></div>
+    </div>
+  </div>
+
+  <div id="settingsTab" style="display:none;">
+    <h2 class="rules-title">Settings</h2>
+    <div class="settings-list">
+      <label class="setting-row">
+        <div><strong>Highlight matching numbers</strong><div class="setting-sub">Shade every cell that shares the selected cell's number</div></div>
+        <input type="checkbox" id="setHighlightSame" checked>
+      </label>
+      <label class="setting-row">
+        <div><strong>Highlight row / column / block</strong><div class="setting-sub">Shade the selected cell's row, column, and block</div></div>
+        <input type="checkbox" id="setHighlightLine" checked>
+      </label>
+      <label class="setting-row">
+        <div><strong>Mistake limit</strong><div class="setting-sub">Mistakes allowed before a puzzle auto-restarts</div></div>
+        <input type="number" id="setMaxMistakes" min="1" max="10" value="3" class="setting-input">
+      </label>
+      <label class="setting-row">
+        <div><strong>Hints per game</strong><div class="setting-sub">Hints available at the start of each puzzle</div></div>
+        <input type="number" id="setStartHints" min="0" max="10" value="3" class="setting-input">
+      </label>
+    </div>
+    <p class="settings-note">Mistake limit and hint count apply the next time you start a game.</p>
+  </div>
+
+  <div id="rulesTab" style="display:none;">
+    <div class="rules-intro">
+      <h2 class="rules-title">Sudoku rules</h2>
+    </div>
+    <div class="rules-grid" id="rulesGrid"></div>
+  </div>
+
+  <section class="info-section">
+    <h2 class="info-title">Play Free Sudoku Now!</h2>
+    <p>Sudoku is one of the most enduring puzzle games around. The goal is simple to state: fill a 9×9 grid with digits so that every row, every column, and every 3×3 block ends up containing all nine numbers, 1 through 9. Despite that simplicity, it's a genuinely great brain workout — a logic puzzle that rewards focus and pattern-spotting rather than memorization. Play a little every day and most people notice their concentration and pattern-recognition sharpening over time. Pick a difficulty above and start your first grid — it won't take long before this becomes a regular habit.</p>
+
+    <h3>About Sudoku</h3>
+    <p>Sudoku traces its modern popularity back to Japan, though the number-placement concept behind it is older. It's a pure logic game — no arithmetic, no special math background needed. All it asks of you is attention and a bit of patience.</p>
+
+    <h3>How to play Sudoku</h3>
+    <p>Fill in the 9×9 grid so that every column, row, and 3×3 block contains the digits 1 through 9. The board starts with a handful of cells already filled in, and your job is to work out the rest using logic alone. A move breaks the puzzle if:</p>
+    <ul>
+      <li>Any row ends up with more than one of the same digit</li>
+      <li>Any column ends up with more than one of the same digit</li>
+      <li>Any 3×3 block ends up with more than one of the same digit</li>
+    </ul>
+
+    <h3>Sudoku tips</h3>
+    <p>Sudoku clicks quickly once a couple of habits become second nature. If you're just starting out, these two are worth practicing first:</p>
+    <ul>
+      <li><strong>Tip 1 — work the fullest lines first.</strong> Rows, columns, or 3×3 blocks that already have five or more numbers filled in are the fastest to finish. Go through their remaining empty cells and try the digits that haven't been used yet — often, one of them will only fit in a single spot once you account for what's already in its row, column, and block.</li>
+      <li><strong>Tip 2 — think in bands of three.</strong> Mentally split the grid into three horizontal bands and three vertical bands of blocks. If two of the three blocks in a band already share the same digit, that digit must land in the one remaining block of that band — then check its nine cells individually to pin down exactly where.</li>
+    </ul>
+    <p>Now that you've got the basics down — pick a difficulty above and enjoy the game.</p>
+  </section>
+
+</div>
+
+<script>
+(function() {
+  const N = 9;
+  let solution = [];
+  let userGrid = [];
+  let notesGrid = [];
+  let given = [];
+  let selected = null;
+  let notesMode = false;
+  let mistakes = 0;
+  let hints = 3;
+  let maxMistakes = 3;
+  let defaultHints = 3;
+  let highlightSame = true;
+  let highlightLine = true;
+  let solverBuilt = false;
+  let timerInterval = null;
+  let seconds = 0;
+  let history = [];
+  let difficulty = 'easy';
+  let solved = false;
+  let paused = false;
+
+  const diffClues = { easy: 40, medium: 32, hard: 26, expert: 22, master: 24, extreme: 20 };
+
+  function emptyGrid() {
+    return Array.from({length: N}, () => Array(N).fill(0));
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function isValid(grid, r, c, val) {
+    for (let i = 0; i < N; i++) {
+      if (grid[r][i] === val || grid[i][c] === val) return false;
+    }
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let i = br; i < br + 3; i++)
+      for (let j = bc; j < bc + 3; j++)
+        if (grid[i][j] === val) return false;
+    return true;
+  }
+
+  function fillGrid(grid) {
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        if (grid[r][c] === 0) {
+          const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+          for (const num of nums) {
+            if (isValid(grid, r, c, num)) {
+              grid[r][c] = num;
+              if (fillGrid(grid)) return true;
+              grid[r][c] = 0;
+            }
+          }
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  function countSolutions(grid, limit) {
+    let count = 0;
+    function solve(g) {
+      if (count >= limit) return;
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          if (g[r][c] === 0) {
+            for (let num = 1; num <= 9; num++) {
+              if (isValid(g, r, c, num)) {
+                g[r][c] = num;
+                solve(g);
+                g[r][c] = 0;
+                if (count >= limit) return;
+              }
+            }
+            return;
+          }
+        }
+      }
+      count++;
+    }
+    solve(grid.map(row => row.slice()));
+    return count;
+  }
+
+  function generatePuzzle(clueCount) {
+    const full = emptyGrid();
+    fillGrid(full);
+    const puz = full.map(row => row.slice());
+    const cells = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) cells.push([r, c]);
+    shuffle(cells);
+
+    let removed = 0;
+    const toRemove = 81 - clueCount;
+
+    for (const [r, c] of cells) {
+      if (removed >= toRemove) break;
+      const backup = puz[r][c];
+      puz[r][c] = 0;
+      const copy = puz.map(row => row.slice());
+      if (countSolutions(copy, 2) === 1) {
+        removed++;
+      } else {
+        puz[r][c] = backup;
+      }
+    }
+    return { full, puz };
+  }
+
+  function startGame(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.dataset.diff === diff));
+
+    const { full, puz } = generatePuzzle(diffClues[diff] || 36);
+    solution = full;
+    userGrid = puz.map(row => row.slice());
+    given = puz.map(row => row.map(v => v !== 0));
+    notesGrid = Array.from({length: N}, () => Array.from({length: N}, () => new Set()));
+    selected = null;
+    mistakes = 0;
+    hints = defaultHints;
+    history = [];
+    solved = false;
+    seconds = 0;
+    paused = false;
+    setPausedUI(false);
+    document.getElementById('winBanner').classList.remove('show');
+    updateMeta();
+    renderBoard();
+    renderNumpad();
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (!paused && !solved) {
+        seconds++;
+        updateTimer();
+      }
+    }, 1000);
+  }
+
+  function setPausedUI(isPaused) {
+    document.getElementById('board').classList.toggle('paused', isPaused);
+    document.getElementById('pauseOverlay').classList.toggle('show', isPaused);
+    document.getElementById('numpad').classList.toggle('paused', isPaused);
+    document.querySelector('.controls-row').classList.toggle('paused', isPaused);
+    const btn = document.getElementById('pauseBtn');
+    btn.classList.toggle('is-paused', isPaused);
+    btn.title = isPaused ? 'Resume' : 'Pause';
+    btn.innerHTML = isPaused
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l14-8Z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+  }
+
+  function togglePause() {
+    if (solved) return;
+    paused = !paused;
+    setPausedUI(paused);
+    if (paused) selected = null;
+  }
+
+  function updateTimer() {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }
+
+  function updateMeta() {
+    document.getElementById('mistakeCount').textContent = `${mistakes}/${maxMistakes}`;
+    document.getElementById('hintCount').textContent = hints;
+  }
+
+  function renderBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        if ((r + 1) % 3 === 0 && r !== 8) cell.classList.add('thick-bottom');
+
+        const val = userGrid[r][c];
+        if (val !== 0) {
+          cell.textContent = val;
+          if (given[r][c]) cell.classList.add('given');
+          else if (val !== solution[r][c]) cell.classList.add('error');
+        } else if (notesGrid[r][c].size > 0) {
+          const notesDiv = document.createElement('div');
+          notesDiv.className = 'notes';
+          for (let n = 1; n <= 9; n++) {
+            const span = document.createElement('span');
+            span.textContent = notesGrid[r][c].has(n) ? n : '';
+            notesDiv.appendChild(span);
+          }
+          cell.appendChild(notesDiv);
+        }
+
+        cell.addEventListener('click', () => selectCell(r, c));
+        board.appendChild(cell);
+      }
+    }
+    applyHighlights();
+  }
+
+  function applyHighlights() {
+    document.querySelectorAll('.cell').forEach(cell => {
+      cell.classList.remove('hl-line', 'hl-same', 'selected');
+    });
+    if (!selected) return;
+    const [sr, sc] = selected;
+    const selVal = userGrid[sr][sc];
+    document.querySelectorAll('.cell').forEach(cell => {
+      const r = +cell.dataset.r, c = +cell.dataset.c;
+      const sameBlock = Math.floor(r/3) === Math.floor(sr/3) && Math.floor(c/3) === Math.floor(sc/3);
+      if (highlightLine && (r === sr || c === sc || sameBlock)) cell.classList.add('hl-line');
+      if (highlightSame && selVal !== 0 && userGrid[r][c] === selVal) cell.classList.add('hl-same');
+      if (r === sr && c === sc) cell.classList.add('selected');
+    });
+  }
+
+  function selectCell(r, c) {
+    if (paused) return;
+    selected = [r, c];
+    applyHighlights();
+  }
+
+  function renderNumpad() {
+    const numpad = document.getElementById('numpad');
+    numpad.innerHTML = '';
+    for (let n = 1; n <= 9; n++) {
+      const btn = document.createElement('button');
+      btn.className = 'num-btn';
+      btn.textContent = n;
+      btn.dataset.num = n;
+      btn.addEventListener('click', () => inputNumber(n));
+      numpad.appendChild(btn);
+    }
+    updateNumpadState();
+  }
+
+  function updateNumpadState() {
+    const counts = Array(10).fill(0);
+    for (let r = 0; r < N; r++)
+      for (let c = 0; c < N; c++)
+        if (userGrid[r][c] !== 0 && userGrid[r][c] === solution[r][c]) counts[userGrid[r][c]]++;
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      const n = +btn.dataset.num;
+      btn.classList.toggle('depleted', counts[n] >= 9);
+    });
+  }
+
+  function pushHistory(r, c) {
+    history.push({ r, c, val: userGrid[r][c], notes: new Set(notesGrid[r][c]) });
+    if (history.length > 100) history.shift();
+  }
+
+  function inputNumber(n) {
+    if (!selected || solved || paused) return;
+    const [r, c] = selected;
+    if (given[r][c]) return;
+
+    pushHistory(r, c);
+
+    if (notesMode) {
+      if (userGrid[r][c] !== 0) return;
+      if (notesGrid[r][c].has(n)) notesGrid[r][c].delete(n);
+      else notesGrid[r][c].add(n);
+      renderBoard();
+      return;
+    }
+
+    notesGrid[r][c].clear();
+    userGrid[r][c] = n;
+
+    if (n !== solution[r][c]) {
+      mistakes++;
+      updateMeta();
+      if (mistakes >= maxMistakes) {
+        renderBoard();
+        setTimeout(() => alert("Out of mistakes! Starting a new puzzle of the same difficulty."), 50);
+        setTimeout(() => startGame(difficulty), 60);
+        return;
+      }
+    }
+
+    renderBoard();
+    updateNumpadState();
+    checkWin();
+  }
+
+  function checkWin() {
+    for (let r = 0; r < N; r++)
+      for (let c = 0; c < N; c++)
+        if (userGrid[r][c] !== solution[r][c]) return;
+    solved = true;
+    clearInterval(timerInterval);
+    document.getElementById('winBanner').classList.add('show');
+  }
+
+  function eraseCell() {
+    if (!selected || paused) return;
+    const [r, c] = selected;
+    if (given[r][c]) return;
+    pushHistory(r, c);
+    userGrid[r][c] = 0;
+    notesGrid[r][c].clear();
+    renderBoard();
+    updateNumpadState();
+  }
+
+  function undo() {
+    if (history.length === 0 || paused) return;
+    const last = history.pop();
+    userGrid[last.r][last.c] = last.val;
+    notesGrid[last.r][last.c] = last.notes;
+    renderBoard();
+    updateNumpadState();
+  }
+
+  function giveHint() {
+    if (hints <= 0 || !selected || solved || paused) return;
+    const [r, c] = selected;
+    if (given[r][c] || userGrid[r][c] === solution[r][c]) return;
+    pushHistory(r, c);
+    userGrid[r][c] = solution[r][c];
+    notesGrid[r][c].clear();
+    hints--;
+    updateMeta();
+    renderBoard();
+    updateNumpadState();
+    checkWin();
+  }
+
+  const ruleTopics = [
+    {
+      title: 'Last free cell',
+      excerpt: 'The simplest technique of all — a row, column, or 3×3 block with just one empty cell left has an obvious answer.',
+      full: 'When a row, column, or 3×3 block has only one blank cell remaining, you already know the answer: since every set must contain each digit 1–9 exactly once, whatever number is missing from that set has to go in the one open cell. Always scan for near-complete lines first — they solve themselves.',
+      highlight: [1, 1], nums: {'0,0':9,'0,1':3,'0,2':6,'1,2':5,'2,0':1,'2,1':4,'2,2':7}
+    },
+    {
+      title: 'Last remaining cell',
+      excerpt: 'Focus on one digit at a time and see which block has only one legal spot left for it.',
+      full: 'Instead of looking at a cell and asking "what fits here," pick a single digit and ask "where can this go in this block?" If that digit already appears in every row and column that crosses a block except one, the one remaining cell must be where it belongs — even if that cell isn\'t the only one empty.',
+      highlight: [0, 0], nums: {'1,1':6,'2,0':9,'2,1':1}
+    },
+    {
+      title: 'Last possible number',
+      excerpt: 'A beginner-friendly check: look at everything already placed in a cell\'s row, column, and block to find what\'s left over.',
+      full: 'For any single empty cell, list every digit already used in its row, its column, and its 3×3 block. Cross all of those off from 1–9, and whatever remains is the answer for that cell. It\'s slower than the other techniques but works on almost any board and is a great first habit to build.',
+      highlight: [1, 0], nums: {'0,1':8,'1,2':6,'2,0':8}
+    },
+    {
+      title: 'Notes in Sudoku',
+      excerpt: 'Stuck with no obvious moves? Jot down every digit that could still fit in each empty cell.',
+      full: 'When no cell has an obvious single answer, switch on Notes and mark every candidate digit that isn\'t yet ruled out for each blank cell by its row, column, and block. This turns a hard puzzle into a smaller logic problem — most of the advanced techniques below work directly off these candidate lists.',
+      highlight: [2, 2], nums: {'0,0':4,'1,1':2}
+    },
+    {
+      title: 'Obvious singles',
+      excerpt: 'Once notes are filled in, any cell left holding just one candidate digit can be placed immediately.',
+      full: 'Also called "naked singles." After marking candidates with Notes, scan for any cell where only one digit remains possible — every other number has been eliminated by its row, column, or block. That cell can be filled in right away, and doing so often creates new obvious singles elsewhere.',
+      highlight: [0, 2], nums: {'1,0':5,'2,1':3}
+    },
+    {
+      title: 'Obvious pairs',
+      excerpt: 'Find two cells in the same block sharing the exact same two candidates — that unlocks the rest of the block.',
+      full: 'If two cells within the same 3×3 block have notes narrowed down to the exact same pair of digits, those two digits must occupy those two cells (in some order) — so they can be safely erased from the notes of every other cell in that block, often revealing new obvious singles.',
+      highlight: [1, 2], nums: {'0,0':7,'2,2':9}
+    }
+  ];
+
+  function ruleThumbSvg(highlight, nums) {
+    const size = 54, gap = 2;
+    let cells = '';
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const x = c * (size + gap), y = r * (size + gap);
+        const isHl = highlight[0] === r && highlight[1] === c;
+        cells += `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="6" fill="${isHl ? '#3b5bdb' : '#ffffff'}" stroke="#c7d2e6" stroke-width="1.5"/>`;
+        const key = `${r},${c}`;
+        if (nums[key]) {
+          cells += `<text x="${x + size/2}" y="${y + size/2 + 8}" font-family="Nunito, sans-serif" font-size="26" font-weight="800" fill="${isHl ? '#ffffff' : '#23283b'}" text-anchor="middle">${nums[key]}</text>`;
+        }
+      }
+    }
+    const total = size * 3 + gap * 2;
+    return `<svg viewBox="0 0 ${total} ${total}" xmlns="http://www.w3.org/2000/svg">${cells}</svg>`;
+  }
+
+  function renderRules() {
+    const grid = document.getElementById('rulesGrid');
+    grid.innerHTML = ruleTopics.map((t, i) => `
+      <div class="rule-card" data-idx="${i}">
+        <div class="rule-thumb">${ruleThumbSvg(t.highlight, t.nums)}</div>
+        <div class="rule-body">
+          <h3>${t.title}</h3>
+          <p class="rule-excerpt">${t.excerpt}</p>
+          <p class="rule-full">${t.full}</p>
+          <button class="rule-toggle">Continue reading →</button>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.rule-card').forEach(card => {
+      card.querySelector('.rule-toggle').addEventListener('click', () => {
+        const expanded = card.classList.toggle('expanded');
+        card.querySelector('.rule-toggle').textContent = expanded ? 'Show less' : 'Continue reading →';
+      });
+    });
+  }
+
+  function buildSolverBoard() {
+    const board = document.getElementById('solverBoard');
+    board.innerHTML = '';
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.inputMode = 'numeric';
+        inp.maxLength = 1;
+        inp.className = 'solver-cell';
+        if ((r + 1) % 3 === 0 && r !== 8) inp.classList.add('thick-b');
+        inp.dataset.r = r;
+        inp.dataset.c = c;
+        inp.addEventListener('input', () => {
+          inp.value = inp.value.replace(/[^1-9]/g, '').slice(0, 1);
+          inp.classList.remove('solved-num');
+        });
+        board.appendChild(inp);
+      }
+    }
+    solverBuilt = true;
+  }
+
+  function solveSolverBoard() {
+    const inputs = document.querySelectorAll('.solver-cell');
+    const grid = emptyGrid();
+    inputs.forEach(inp => {
+      const r = +inp.dataset.r, c = +inp.dataset.c;
+      const v = inp.value.trim();
+      grid[r][c] = v ? parseInt(v) : 0;
+    });
+
+    let ok = true;
+    for (let r = 0; r < 9 && ok; r++) {
+      for (let c = 0; c < 9 && ok; c++) {
+        const v = grid[r][c];
+        if (v !== 0) {
+          grid[r][c] = 0;
+          if (!isValid(grid, r, c, v)) ok = false;
+          grid[r][c] = v;
+        }
+      }
+    }
+
+    const msg = document.getElementById('solverMsg');
+    if (!ok) {
+      msg.textContent = "That doesn't look solvable — check for a repeated number in a row, column, or block.";
+      msg.classList.remove('ok');
+      return;
+    }
+
+    const success = fillGrid(grid);
+    if (!success) {
+      msg.textContent = 'No solution exists for this arrangement of numbers.';
+      msg.classList.remove('ok');
+      return;
+    }
+
+    inputs.forEach(inp => {
+      const r = +inp.dataset.r, c = +inp.dataset.c;
+      if (!inp.value) {
+        inp.value = grid[r][c];
+        inp.classList.add('solved-num');
+      }
+    });
+    msg.textContent = 'Solved!';
+    msg.classList.add('ok');
+  }
+
+  function clearSolverBoard() {
+    document.querySelectorAll('.solver-cell').forEach(inp => {
+      inp.value = '';
+      inp.classList.remove('solved-num');
+    });
+    document.getElementById('solverMsg').textContent = '';
+  }
+
+  document.getElementById('solveBtn').addEventListener('click', solveSolverBoard);
+  document.getElementById('clearSolverBtn').addEventListener('click', clearSolverBoard);
+
+  document.getElementById('setHighlightSame').addEventListener('change', (e) => {
+    highlightSame = e.target.checked;
+    applyHighlights();
+  });
+  document.getElementById('setHighlightLine').addEventListener('change', (e) => {
+    highlightLine = e.target.checked;
+    applyHighlights();
+  });
+  document.getElementById('setMaxMistakes').addEventListener('change', (e) => {
+    let v = parseInt(e.target.value) || 3;
+    v = Math.min(10, Math.max(1, v));
+    e.target.value = v;
+    maxMistakes = v;
+    updateMeta();
+  });
+  document.getElementById('setStartHints').addEventListener('change', (e) => {
+    let v = parseInt(e.target.value);
+    if (isNaN(v)) v = 3;
+    v = Math.min(10, Math.max(0, v));
+    e.target.value = v;
+    defaultHints = v;
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      const allTabs = { play: 'playTab', solver: 'solverTab', tips: 'tipsTab', settings: 'settingsTab', rules: 'rulesTab' };
+      Object.entries(allTabs).forEach(([key, id]) => {
+        document.getElementById(id).style.display = (key === tab) ? '' : 'none';
+      });
+      if (tab !== 'play' && !paused && !solved) togglePause();
+      if (tab === 'solver' && !solverBuilt) buildSolverBoard();
+    });
+  });
+
+  document.getElementById('diffRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('.diff-btn');
+    if (btn) startGame(btn.dataset.diff);
+  });
+
+  document.getElementById('newGameBtn').addEventListener('click', () => startGame(difficulty));
+  document.getElementById('pauseBtn').addEventListener('click', togglePause);
+  document.getElementById('pauseOverlay').addEventListener('click', togglePause);
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('eraseBtn').addEventListener('click', eraseCell);
+  document.getElementById('hintBtn').addEventListener('click', giveHint);
+  document.getElementById('notesBtn').addEventListener('click', (e) => {
+    notesMode = !notesMode;
+    const btn = e.currentTarget;
+    btn.classList.toggle('active', notesMode);
+    const flag = document.getElementById('notesFlag');
+    if (flag) flag.textContent = notesMode ? 'ON' : 'OFF';
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ') { e.preventDefault(); togglePause(); return; }
+    if (!selected || paused) return;
+    if (e.key >= '1' && e.key <= '9') inputNumber(+e.key);
+    if (e.key === 'Backspace' || e.key === 'Delete') eraseCell();
+  });
+
+  // init
+  document.querySelector('.diff-btn[data-diff="easy"]').classList.add('active');
+  renderRules();
+  startGame('easy');
+})();
+</script>
+</body>
+</html>
